@@ -3,6 +3,19 @@ import { defineStore } from 'pinia'
 import { STARS, CONSTELLATIONS } from '../data/stars'
 import type { Star } from '../types'
 
+export const SPECTRAL_TYPES = ['O', 'B', 'A', 'F', 'G', 'K', 'M'] as const
+export type SpectralType = typeof SPECTRAL_TYPES[number]
+
+export const SPECTRAL_INFO: Record<SpectralType, { color: string; name: string; desc: string; temp: string }> = {
+  'O': { color: '#9bb0ff', name: 'O 型星', desc: '蓝超巨星，温度最高，质量最大', temp: '30,000K+' },
+  'B': { color: '#aabfff', name: 'B 型星', desc: '蓝巨星，炽热明亮', temp: '10,000-30,000K' },
+  'A': { color: '#cad7ff', name: 'A 型星', desc: '蓝白星，氢线最强', temp: '7,500-10,000K' },
+  'F': { color: '#f8f7ff', name: 'F 型星', desc: '黄白星，金属线开始显现', temp: '6,000-7,500K' },
+  'G': { color: '#fff4ea', name: 'G 型星', desc: '黄星，太阳即属于此类', temp: '5,000-6,000K' },
+  'K': { color: '#ffd2a1', name: 'K 型星', desc: '橙星，温度较低', temp: '3,500-5,000K' },
+  'M': { color: '#ffcc6f', name: 'M 型星', desc: '红矮星/红巨星，温度最低', temp: '2,500-3,500K' }
+}
+
 export const useSkyStore = defineStore('sky', () => {
   const viewDate = ref(new Date())
   const zoom = ref(1.0)
@@ -14,6 +27,7 @@ export const useSkyStore = defineStore('sky', () => {
   const selectedStar = ref<Star | null>(null)
   const searchQuery = ref('')
   const latitude = ref(39.9) // Beijing default
+  const spectralFilter = ref<SpectralType | 'ALL'>('ALL')
 
   const localSiderealTime = computed(() => {
     const d = viewDate.value
@@ -25,9 +39,20 @@ export const useSkyStore = defineStore('sky', () => {
   })
 
   const filteredStars = computed(() => {
-    if (!searchQuery.value) return []
-    const q = searchQuery.value.toLowerCase()
-    return STARS.filter(s => s.name.toLowerCase().includes(q)).slice(0, 5)
+    let stars = STARS
+    if (spectralFilter.value !== 'ALL') {
+      stars = stars.filter(s => s.spectral === spectralFilter.value)
+    }
+    if (searchQuery.value) {
+      const q = searchQuery.value.toLowerCase()
+      stars = stars.filter(s => s.name.toLowerCase().includes(q))
+    }
+    return stars.slice(0, 5)
+  })
+
+  const visibleStars = computed(() => {
+    if (spectralFilter.value === 'ALL') return STARS
+    return STARS.filter(s => s.spectral === spectralFilter.value)
   })
 
   function projectStar(ra: number, dec: number, cx: number, cy: number, scale: number): [number, number] {
@@ -61,7 +86,7 @@ export const useSkyStore = defineStore('sky', () => {
   function selectStar(x: number, y: number, cx: number, cy: number, scale: number) {
     let closest: Star | null = null
     let minDist = 20
-    for (const star of STARS) {
+    for (const star of visibleStars.value) {
       const [sx, sy] = projectStar(star.ra, star.dec, cx, cy, scale)
       const dist = Math.hypot(sx - x, sy - y)
       if (dist < minDist) { minDist = dist; closest = star }
@@ -72,7 +97,8 @@ export const useSkyStore = defineStore('sky', () => {
   return {
     viewDate, zoom, panX, panY, showLabels, showConstLines, showGrid,
     selectedStar, searchQuery, latitude, localSiderealTime, filteredStars,
+    spectralFilter, visibleStars,
     projectStar, starRadius, spectralColor, selectStar,
-    STARS, CONSTELLATIONS
+    STARS, CONSTELLATIONS, SPECTRAL_TYPES, SPECTRAL_INFO
   }
 })

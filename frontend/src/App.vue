@@ -10,9 +10,38 @@
         <div v-if="store.filteredStars.length" class="mt-1">
           <div v-for="s in store.filteredStars" :key="s.name"
             @click="store.selectedStar = s"
-            class="bg-gray-800 p-2 rounded mt-1 cursor-pointer hover:bg-gray-700 text-sm">
-            {{ s.name }} <span class="text-gray-400">mag {{ s.mag }}</span>
+            class="bg-gray-800 p-2 rounded mt-1 cursor-pointer hover:bg-gray-700 text-sm flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: store.spectralColor(s.spectral) }"></span>
+            <span>{{ s.name }}</span>
+            <span class="text-gray-400 ml-auto">mag {{ s.mag }}</span>
           </div>
+        </div>
+      </div>
+
+      <!-- Spectral Filter -->
+      <div>
+        <label class="text-gray-400 text-xs mb-2 block">光谱类型筛选</label>
+        <div class="flex flex-wrap gap-1">
+          <button
+            @click="store.spectralFilter = 'ALL'"
+            :class="[
+              'px-2 py-1 text-xs rounded transition-colors',
+              store.spectralFilter === 'ALL' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            ]">
+            全部
+          </button>
+          <button
+            v-for="type in store.SPECTRAL_TYPES"
+            :key="type"
+            @click="store.spectralFilter = type"
+            :class="[
+              'px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors',
+              store.spectralFilter === type ? 'ring-2 ring-blue-400' : ''
+            ]"
+            :style="{ backgroundColor: store.SPECTRAL_INFO[type].color + '33', color: store.SPECTRAL_INFO[type].color }">
+            <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: store.SPECTRAL_INFO[type].color }"></span>
+            {{ type }}
+          </button>
         </div>
       </div>
 
@@ -55,7 +84,49 @@
           <p>赤经: {{ store.selectedStar.ra.toFixed(2) }}h</p>
           <p>赤纬: {{ store.selectedStar.dec.toFixed(2) }}°</p>
           <p>视星等: {{ store.selectedStar.mag }}</p>
-          <p>光谱型: {{ store.selectedStar.spectral }}</p>
+          <div class="flex items-center gap-2">
+            <span>光谱型:</span>
+            <span
+              class="w-4 h-4 rounded-full"
+              :style="{ backgroundColor: store.spectralColor(store.selectedStar.spectral) }"></span>
+            <span>{{ store.selectedStar.spectral }}</span>
+          </div>
+        </div>
+        <div
+          v-if="store.SPECTRAL_INFO[store.selectedStar.spectral as keyof typeof store.SPECTRAL_INFO]"
+          class="mt-3 pt-3 border-t border-gray-700">
+          <div class="flex items-center gap-2 mb-2">
+            <span
+              class="w-3 h-3 rounded-full"
+              :style="{ backgroundColor: store.SPECTRAL_INFO[store.selectedStar.spectral as keyof typeof store.SPECTRAL_INFO].color }"></span>
+            <span class="text-sm font-semibold"
+              :style="{ color: store.SPECTRAL_INFO[store.selectedStar.spectral as keyof typeof store.SPECTRAL_INFO].color }">
+              {{ store.SPECTRAL_INFO[store.selectedStar.spectral as keyof typeof store.SPECTRAL_INFO].name }}
+            </span>
+          </div>
+          <p class="text-xs text-gray-400 mb-1">
+            {{ store.SPECTRAL_INFO[store.selectedStar.spectral as keyof typeof store.SPECTRAL_INFO].desc }}
+          </p>
+          <p class="text-xs text-gray-500">
+            表面温度: {{ store.SPECTRAL_INFO[store.selectedStar.spectral as keyof typeof store.SPECTRAL_INFO].temp }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Spectral Legend -->
+      <div class="text-xs">
+        <h4 class="text-gray-400 mb-2">光谱类型说明</h4>
+        <div class="space-y-1">
+          <div
+            v-for="type in store.SPECTRAL_TYPES"
+            :key="type"
+            class="flex items-center gap-2 text-gray-300">
+            <span
+              class="w-3 h-3 rounded-full flex-shrink-0"
+              :style="{ backgroundColor: store.SPECTRAL_INFO[type].color }"></span>
+            <span class="font-mono" :style="{ color: store.SPECTRAL_INFO[type].color }">{{ type }}</span>
+            <span class="text-gray-500 text-xs">{{ store.SPECTRAL_INFO[type].temp }}</span>
+          </div>
         </div>
       </div>
 

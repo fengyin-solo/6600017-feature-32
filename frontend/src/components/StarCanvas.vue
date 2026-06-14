@@ -77,7 +77,7 @@ function draw() {
   }
 
   // stars
-  for (const star of store.STARS) {
+  for (const star of store.visibleStars) {
     const [x, y] = store.projectStar(star.ra, star.dec, cx, cy, scale)
     if (x < -500 || x > w + 500 || y < -500 || y > h + 500) continue
     const radius = store.starRadius(star.mag)
